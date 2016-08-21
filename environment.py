@@ -50,6 +50,7 @@ class Environment(object):
         self.roads = []
 
         self.success = dict()
+        self.stats = dict({"winning":0, "success_rate":0}) 
         self.trial_counter = 0
         for x in xrange(self.bounds[0], self.bounds[2] + 1):
             for y in xrange(self.bounds[1], self.bounds[3] + 1):
@@ -218,9 +219,12 @@ class Environment(object):
                 self.done = True
                 print "Environment.act(): Primary agent has reached destination!"  # [debug]
                 self.success[self.trial_counter] = reward
+                self.stats["winning"]+=1
             self.status_text = "state: {}\naction: {}\nreward: {}".format(agent.get_state(), action, reward)
             #print "Environment.act() [POST]: location: {}, heading: {}, action: {}, reward: {}".format(location, heading, action, reward)  # [debug]
         np.save('result.npy',self.success)
+        np.save('stats.npy',self.stats)
+
         return reward
 
     def compute_dist(self, a, b):

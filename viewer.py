@@ -2,15 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-stat = np.load("result.npy").item()
-
+result = np.load("result.npy").item()
+stats = np.load("stats.npy").item()
 
 colors = list("rgbcmyk")
-
-x = stat.keys()
-y = stat.values()
+print stats
+x = result.keys()
+y = result.values()
 plt.scatter(x,y,color=colors.pop())
 plt.xlabel("Trials", fontsize = 14)
 plt.ylabel("Rewards", fontsize = 14)
-plt.legend(stat.keys())
+plt.legend(result.keys())
 plt.show()

@@ -45,15 +45,7 @@ class LearningAgent(Agent):
             left = "None"
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        keys = self.qtable.keys()
-        self.future_rewards = -1000
-        for x in keys:
-            #print x, self.qtable[x]
-            if x[0] == self.oldState and (self.qtable[x] > self.future_rewards):
-                self.future_rewards = self.qtable[x]
-        #self.qtable[(self.oldState, self.oldAction)]= (1-self.alpha)*self.oldReward + self.alpha * ( self.gamma * self.future_rewards )
-        #self.qtable[(self.oldState, self.oldAction)] = self.oldReward + self.future_rewards
-        self.qtable[(self.oldState, self.oldAction)]= (1-self.alpha)*
+        self.update_qtable()
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         state = inputs["light"]+","+ocg+","+left+","+self.next_waypoint
@@ -89,6 +81,14 @@ class LearningAgent(Agent):
              action = random.choice(self.actions)
         return action
 
+    def update_qtable(self):
+        keys = self.qtable.keys()
+        self.future_rewards = -1000
+        for x in keys:
+            if x[0] == self.oldState and (self.qtable[x] > self.future_rewards):
+                self.future_rewards = self.qtable[x]
+        self.qtable[(self.oldState, self.oldAction)]= (1-self.alpha)*self.oldReward + self.alpha*(self.gamma*self.future_rewards)
+
 
 def run():
     """Run the agent for a finite number of trials."""
@@ -100,7 +100,7 @@ def run():
     # NOTE: You can set enforce_deadline=False while debugging to allow longer trials
 
     # Now simulate it
-    sim = Simulator(e, update_delay=0.0, display=False)  # create simulator (uses pygame when display=True, if available)
+    sim = Simulator(e, update_delay=0.3, display=True)  # create simulator (uses pygame when display=True, if available)
     # NOTE: To speed up simulation, reduce update_delay and/or set display=False
 
     sim.run(n_trials=100)  # run for a specified number of trials

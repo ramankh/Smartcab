@@ -48,9 +48,13 @@ class Environment(object):
         self.block_size = 100
         self.intersections = OrderedDict()
         self.roads = []
-
+        ############### Added attributes ################
         self.success = dict()
-        self.stats = dict({"winning":0, "success_rate":0}) 
+        self.stats = dict({"winning":0})
+        self.posCounter = 0
+        self.negCounter = 0
+        self.reward_portion = dict()
+        #################################################
         self.trial_counter = 0
         for x in xrange(self.bounds[0], self.bounds[2] + 1):
             for y in xrange(self.bounds[1], self.bounds[3] + 1):
@@ -83,6 +87,8 @@ class Environment(object):
     def reset(self):
         self.done = False
         self.t = 0
+        self.posCounter = 0
+        self.negCounter = 0
 
         # Reset traffic lights
         for traffic_light in self.intersections.itervalues():
@@ -129,12 +135,17 @@ class Environment(object):
             if agent_deadline <= self.hard_time_limit:
                 self.done = True
                 print "Environment.step(): Primary agent hit hard time limit ({})! Trial aborted.".format(self.hard_time_limit)
+                print "pos counter = " + str(self.posCounter)
+                print "neg counter = " + str(self.negCounter)
+                self.reward_portion[self.trial_counter] = float(self.posCounter) / (self.posCounter+self.negCounter)
             elif self.enforce_deadline and agent_deadline <= 0:
                 self.done = True
                 print "Environment.step(): Primary agent ran out of time! Trial aborted."
+                print "pos counter = " + str(self.posCounter)
+                print "neg counter = " + str(self.negCounter)
+                self.reward_portion[self.trial_counter] = float(self.posCounter) / (self.posCounter+self.negCounter)
             self.success[self.trial_counter] = -15
             self.agent_states[self.primary_agent]['deadline'] = agent_deadline - 1
-
         self.t += 1
 
     def sense(self, agent):
@@ -204,26 +215,38 @@ class Environment(object):
                 #if self.bounds[0] <= location[0] <= self.bounds[2] and self.bounds[1] <= location[1] <= self.bounds[3]:  # bounded
                 state['location'] = location
                 state['heading'] = heading
-                reward = 2.0 if action == agent.get_next_waypoint() else -0.5  # valid, but is it correct? (as per waypoint)
+                if action == agent.get_next_waypoint():
+                    reward = 2.0
+                    self.posCounter+=1
+                else:
+                    reward = -0.5  # valid, but is it correct? (as per waypoint)
+                    self.negCounter+=1
             else:
                 # Valid null move
                 reward = 0.0
+                self.posCounter += 1
         else:
             # Invalid move
             reward = -1.0
+            self.negCounter+=1
 
         if agent is self.primary_agent:
             if state['location'] == state['destination']:
                 if state['deadline'] >= 0:
                     reward += 10  # bonus
+                    self.posCounter +=1
                 self.done = True
                 print "Environment.act(): Primary agent has reached destination!"  # [debug]
+                print "pos counter = " + str(self.posCounter)
+                print "neg counter = " + str(self.negCounter)
+                self.reward_portion[self.trial_counter] = float(self.posCounter) / (self.posCounter+self.negCounter)
                 self.success[self.trial_counter] = reward
                 self.stats["winning"]+=1
             self.status_text = "state: {}\naction: {}\nreward: {}".format(agent.get_state(), action, reward)
             #print "Environment.act() [POST]: location: {}, heading: {}, action: {}, reward: {}".format(location, heading, action, reward)  # [debug]
         np.save('result.npy',self.success)
         np.save('stats.npy',self.stats)
+        np.save('rewards.npy', self.reward_portion)
 
         return reward
 

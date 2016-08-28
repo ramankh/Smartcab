@@ -68,6 +68,7 @@ class Simulator(object):
             self.current_time = 0.0
             self.last_updated = 0.0
             self.start_time = time.time()
+            self.env.primary_agent.trial_vounter = trial
             while True:
                 try:
                     # Update current time
